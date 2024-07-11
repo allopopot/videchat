@@ -13,6 +13,7 @@ type PeerContext = {
     close: Function,
     isReceivingCall: boolean,
     isCalling: boolean,
+    isOnCall: boolean,
     name: string
 }
 
@@ -28,13 +29,14 @@ export function PeerProvider({ children }: any) {
     const [isReceivingCall, setIsReceivingCall] = useState<boolean>(false)
     const [isCalling, setIsCalling] = useState<boolean>(false)
     const [name, setName] = useState("")
-    const [timeout, settimeout] = useState(false)
+    const [isOnCall, setIsOnCall] = useState(false)
+    // const [timeout, settimeout] = useState(false)
 
     function reset() {
         setName("")
         setIsCalling(false)
         setIsReceivingCall(false)
-        settimeout(false)
+        // settimeout(false)
     }
 
     function callTo(id: string, name: string) {
@@ -49,7 +51,7 @@ export function PeerProvider({ children }: any) {
         }
         console.log(`calling peer ${id}`)
         setIsCalling(true)
-        settimeout(true)
+        // settimeout(true)
     }
 
     function answer() {
@@ -63,12 +65,12 @@ export function PeerProvider({ children }: any) {
         reset()
     }
 
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            close()
-            clearTimeout(timeout)
-        }, 30000);
-    }, [timeout])
+    // useEffect(() => {
+    //     const timeout = setTimeout(() => {
+    //         close()
+    //         clearTimeout(timeout)
+    //     }, 30000);
+    // }, [timeout])
 
     useEffect(() => {
         if (!auth?.user?.id) { return; }
@@ -85,7 +87,7 @@ export function PeerProvider({ children }: any) {
 
         peer?.on("call", (conn) => {
             console.log("recieving call", conn)
-            settimeout(true)
+            // settimeout(true)
             supabase.from("users").select().eq("id", conn.peer).then(response => {
                 if (response.error) { return; }
                 setName(response.data[0].fullname)
@@ -114,11 +116,14 @@ export function PeerProvider({ children }: any) {
     useEffect(() => {
         mediaConnection?.on("stream", (stream) => {
             setRemoteVideoStream(stream)
+            setIsOnCall(true)
+            console.log("asdasdasdddddddddddddddddddddddddd")
             reset()
         })
 
         mediaConnection?.on("close", () => {
             console.log("mediaConnection closed:")
+            setIsOnCall(false)
             reset()
             setRemoteVideoStream(undefined)
         })
@@ -128,7 +133,7 @@ export function PeerProvider({ children }: any) {
         })
     }, [mediaConnection])
 
-    const value: PeerContext = { peer, callTo, myVideoStream, remoteVideoStream, close, answer, isReceivingCall, isCalling, name }
+    const value: PeerContext = { peer, callTo, myVideoStream, remoteVideoStream, close, answer, isReceivingCall, isCalling, name, isOnCall }
 
     return (
         <PeerContext.Provider value={value} >{children}</PeerContext.Provider>
